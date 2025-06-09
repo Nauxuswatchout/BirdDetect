@@ -72,35 +72,55 @@
     padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 6px;
-    background: #f8f9fa;
-    color: #495057;
+    background: #000;
+    color: white;
     cursor: pointer;
     font-weight: 500;
     transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .control-button:hover {
-    background: #e9ecef;
+    background: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.control-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .delete-button {
     padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 6px;
-    background: #ff4444;
+    background: #000;
     color: white;
     cursor: pointer;
     font-weight: 500;
     transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .delete-button:hover:not(:disabled) {
-    background: #ff0000;
+    background: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.delete-button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .delete-button:disabled {
-    background: #ffa0a0;
+    background: #666;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 #searchInput {
@@ -257,24 +277,30 @@
     cursor: pointer;
     font-weight: 500;
     transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .modal-button.cancel {
-    background: #f8f9fa;
-    color: #495057;
+    background: #000;
+    color: white;
 }
 
 .modal-button.cancel:hover {
-    background: #e9ecef;
+    background: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .modal-button.confirm {
-    background: #dc3545;
+    background: #000;
     color: white;
 }
 
 .modal-button.confirm:hover {
-    background: #c82333;
+    background: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .progress-overlay {
@@ -462,17 +488,21 @@
 
 .notification-close {
     padding: 0.75rem 2rem;
-    background: rgba(255, 255, 255, 0.2);
+    background: #000;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 500;
     transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .notification-close:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 </style>
 

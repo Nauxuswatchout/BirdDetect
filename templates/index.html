@@ -1,6 +1,37 @@
 {% extends "base.html" %}
 
+{% block head %}
+<meta name="just-logged-in" content="{{ 'true' if session.get('just_logged_in', False) else 'false' }}">
+{% endblock %}
+
 {% block content %}
+<div class="hero-section">
+    <img src="{{ url_for('static', filename='images/home.webp') }}" alt="Home Background" class="hero-background">
+    <div class="hero-content">
+        <div class="hero-text-container">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="hero-logo">
+            <div class="hero-text">
+                <h1>Bird Detection: Intelligent Image Processing and Tag Subscription Platform</h1>
+                <p>After uploading an image, the system automatically detects its content and generates relevant tags. Users can search images by tags and subscribe to topics of interest to receive timely updates.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Login Success Modal -->
+<div id="loginSuccessModal" class="modal">
+    <div class="modal-content">
+        <div class="success-icon">
+            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+        </div>
+        <h2>Login Successful</h2>
+        <p>Welcome back to Bird Detection System</p>
+    </div>
+</div>
+
 <div class="card-grid">
     {% if current_user.is_authenticated %}
         <a href="{{ url_for('upload') }}" class="card" title="Upload new images to the system">
@@ -58,7 +89,298 @@
     {% endif %}
 </div>
 
+<section class="cyber-info-section">
+    <!-- Bird Detection System Section -->
+    <div class="info-block dark">
+        <div class="info-block-content">
+            <div class="info-header">
+                <div class="info-number">1</div>
+                <h2 class="info-title">Platform Overview</h2>
+            </div>
+            
+            <div class="info-flex-container">
+                <div class="info-image-column">
+                    <img src="{{ url_for('static', filename='images/bird01.jpg') }}" alt="Bird Detection System">
+                </div>
+                
+                <div class="info-text-column">
+                    <p>This platform allows users to upload bird-related images and automatically analyzes them using deep learning models. The system identifies the main objects in the image and generates meaningful tags for each upload.</p>
+                    <p>Users can search images by tags, manage their uploads, and even subscribe to specific topics to receive real-time notifications when new images matching those tags are added.</p>
+                    <p>All operations are supported by serverless Lambda functions, DynamoDB, and SNS, ensuring fast performance and seamless scalability.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+    <div class="info-block light">
+        <div class="info-list-container">
+            <h3>Key Features of Bird Detection:</h3>
+            <div class="info-list-columns">
+                <div class="info-list-column">
+                    <ul>
+                        <li>Upload images directly via browser</li>
+                        <li>Automatic tag generation using object detection</li>
+                        <li>Multi-camera support system</li>
+                        <li>Search images by single or multiple tags</li>
+                    </ul>
+                </div>
+                <div class="info-list-column">
+                    <ul>
+                        <li>Behavioral pattern analysis</li>
+                        <li>Subscribe to tags and receive SNS notifications</li>
+                        <li>Manage and delete uploaded images</li>
+                        <li>Scalable serverless backend (Lambda, API Gateway, DynamoDB)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Characteristics Section -->
+    <div class="info-block dark">
+        <div class="info-block-content">
+            <div class="info-header">
+                <div class="info-number">2</div>
+                <h2 class="info-title">SYSTEM WORKFLOW</h2>
+            </div>
+            
+            <div class="info-flex-container">
+                <div class="info-image-column">
+                    <img src="{{ url_for('static', filename='images/bird02.webp') }}" alt="System Features">
+                </div>
+                
+                <div class="info-text-column">
+                    <p>Uploaded images are processed by a FastAPI service running on AWS Lambda. The image is passed through a YOLO-based object detection model to extract bird-related tags.</p>
+                    <p>The results, including image metadata and detected tags, are stored in DynamoDB. Users can later retrieve images by tag or subscribe to new uploads using SNS topic notifications.</p>
+                    <p>This architecture ensures low-latency processing, cost-efficiency, and easy integration with modern web frontends.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-block light">
+        <div class="info-list-container">
+            <h3>Technical Specifications:</h3>
+            <div class="info-list-columns">
+                <div class="info-list-column">
+                    <ul>
+                        <li>FastAPI-based backend running on AWS Lambda</li>
+                        <li>Real-time object detection using YOLOv8 model</li>
+                        <li>Tag data stored in DynamoDB with efficient indexing</li>
+                        <li>S3 bucket for original image and thumbnail storage</li>
+                    </ul>
+                </div>
+                <div class="info-list-column">
+                    <ul>
+                        <li>JWT-based user authentication via Cognito</li>
+                        <li>Tag-based search using API Gateway endpoints</li>
+                        <li>SNS integration for tag subscription notifications</li>
+                        <li>Serverless and scalable cloud-native architecture</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Why Study Birds Section -->
+    <div class="info-block dark">
+        <div class="info-block-content">
+            <div class="info-header">
+                <div class="info-number">3</div>
+                <h2 class="info-title">WHY STUDY BIRDS?</h2>
+            </div>
+            
+            <div class="info-flex-container">
+                <div class="info-image-column">
+                    <img src="{{ url_for('static', filename='images/bird03.jpg') }}" alt="Bird Research">
+                </div>
+                
+                <div class="info-text-column">
+                    <p>Birds serve as crucial indicators of environmental health and ecosystem stability.</p>
+                    <p>Understanding bird behavior and migration patterns helps predict environmental changes and assess climate impact.</p>
+                    <p>Bird population monitoring contributes to biodiversity conservation and habitat protection efforts.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-block light">
+        <div class="info-list-container">
+            <h3>Benefits of Bird Research:</h3>
+            <div class="info-list-columns">
+                <div class="info-list-column">
+                    <ul>
+                        <li>Environmental health monitoring</li>
+                        <li>Climate change impact assessment</li>
+                        <li>Ecosystem balance indicators</li>
+                        <li>Biodiversity conservation</li>
+                    </ul>
+                </div>
+                <div class="info-list-column">
+                    <ul>
+                        <li>Migration pattern analysis</li>
+                        <li>Species preservation efforts</li>
+                        <li>Habitat protection planning</li>
+                        <li>Educational research value</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Us Section -->
+    <div class="about-block">
+        <div class="about-content-wrapper">
+            <div class="about-header">
+                <h2 class="about-title">ABOUT US</h2>
+            </div>
+            
+            <div class="about-content">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Company Logo" class="about-logo">
+                
+                <div class="team-info">
+                    <h3 class="team-title">Development Team</h3>
+                    
+                    <div class="team-members">
+                        <p>Tianyi Song (Masters of CyberSecurity)</p>
+                        <p>Chaoyang Zheng (Masters of CyberSecurity)</p>
+                        <p>Yuchen Chi (Masters of Computer Science)</p>
+                        <p>Xi He (Masters of Computer Science)</p>
+                    </div>
+                    
+                    <div class="contact-info">
+                        <p class="contact-label">Contact us:</p>
+                        <a href="mailto:Nauxuswatchout@gmail.com" class="contact-email">Nauxuswatchout@gmail.com</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<button id="back-to-top">Back to Top</button>
+
 <style>
+.hero-section {
+    position: relative;
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 40px;
+    height: 400px;
+    overflow: hidden;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.hero-background {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: translateY(-50%);
+}
+
+.hero-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(0,0,0,0.6) 30%, rgba(0,0,0,0.2) 60%, transparent);
+}
+
+.hero-text-container {
+    padding-left: 5%;
+    max-width: 50%;
+}
+
+.hero-logo {
+    width: 180px;
+    height: auto;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+}
+
+.hero-text {
+    color: white;
+}
+
+.hero-text h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    line-height: 1.2;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.hero-text p {
+    font-size: 1rem;
+    line-height: 1.5;
+    opacity: 0.9;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 1024px) {
+    .hero-section {
+        height: 350px;
+    }
+
+    .hero-text-container {
+        max-width: 60%;
+    }
+
+    .hero-logo {
+        width: 150px;
+        margin-bottom: 15px;
+    }
+
+    .hero-text h1 {
+        font-size: 1.8rem;
+    }
+
+    .hero-text p {
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        height: 300px;
+        margin-top: 10px;
+        margin-bottom: 30px;
+    }
+
+    .hero-content {
+        background: linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.7) 50%, rgba(0,0,0,0.4));
+    }
+
+    .hero-text-container {
+        padding-left: 4%;
+        max-width: 80%;
+    }
+
+    .hero-logo {
+        width: 120px;
+        margin-bottom: 12px;
+    }
+
+    .hero-text h1 {
+        font-size: 1.4rem;
+        margin-bottom: 12px;
+    }
+
+    .hero-text p {
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+}
+
 .card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -125,7 +447,6 @@
     transform: translateY(20px);
 }
 
-/* 工具提示样式 */
 .card::after {
     content: attr(title);
     position: absolute;
@@ -151,5 +472,562 @@
     visibility: visible;
     bottom: -0.1rem;
 }
+
+/* Info Section Styles */
+.cyber-info-section {
+    width: 100%;
+    margin-top: 40px;
+}
+
+.info-block {
+    padding: 80px 0;
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+}
+
+.info-block.dark {
+    background-color: #111;
+    color: white;
+}
+
+.info-block.light {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.info-block-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.info-number {
+    font-size: 64px;
+    width: 80px;
+    text-align: center;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.info-title {
+    position: relative;
+    margin: 0 0 0 60px;
+    padding-left: 30px;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 3px;
+}
+
+.info-title::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 20px;
+    height: 3px;
+    background: #3498db;
+    transform: translateY(-50%);
+}
+
+.info-flex-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    align-items: center;
+}
+
+.info-image-column {
+    flex: 1;
+    min-width: 300px;
+}
+
+.info-image-column img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.info-text-column {
+    flex: 1;
+    min-width: 300px;
+}
+
+.info-text-column p {
+    margin-bottom: 20px;
+    line-height: 1.8;
+    font-size: 16px;
+}
+
+.info-list-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.info-list-container h3 {
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.info-list-columns {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+}
+
+.info-list-column {
+    flex: 1;
+    max-width: 45%;
+}
+
+.info-list-column ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.info-list-column li {
+    margin-bottom: 15px;
+    padding-left: 25px;
+    position: relative;
+    line-height: 1.6;
+}
+
+.info-list-column li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #3498db;
+    font-size: 20px;
+}
+
+/* About Section Styles */
+.text-center {
+    text-align: center;
+}
+
+.about-block {
+    background-color: #111;
+    color: white;
+    padding: 80px 0;
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+}
+
+.about-content-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.about-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.about-title {
+    display: inline-block;
+    position: relative;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding-bottom: 20px;
+    margin: 0;
+}
+
+.about-title::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: #3498db;
+}
+
+.about-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+}
+
+.about-logo {
+    max-width: 300px;
+    height: auto;
+}
+
+.team-info {
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+}
+
+.team-title {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #3498db;
+}
+
+.team-members {
+    margin-bottom: 30px;
+}
+
+.team-members p {
+    margin: 10px 0;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.contact-info {
+    margin-top: 20px;
+}
+
+.contact-label {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.contact-email {
+    color: #3498db;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.contact-email:hover {
+    text-decoration: underline;
+}
+
+/* Back to Top Button - Enhanced Style */
+#back-to-top {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    background-color: #000;
+    color: white;
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: none;
+    font-size: 24px;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    align-items: center;
+    justify-content: center;
+}
+
+#back-to-top::before {
+    content: '↑';
+    font-family: Arial, sans-serif;
+}
+
+#back-to-top:hover {
+    background-color: #333;
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+.nav-button {
+    display: inline-block;
+    padding: 8px 16px;
+    margin-left: 10px;
+    background-color: #000;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.nav-button:hover {
+    background-color: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.nav-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .info-number {
+        font-size: 48px;
+        width: 60px;
+    }
+
+    .info-title {
+        font-size: 28px;
+        margin-left: 40px;
+        padding-left: 20px;
+    }
+
+    .info-title::before {
+        width: 15px;
+    }
+
+    .about-block {
+        padding: 60px 0;
+    }
+
+    .about-title {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    .info-number {
+        font-size: 36px;
+        width: 50px;
+    }
+
+    .info-title {
+        font-size: 24px;
+        margin-left: 30px;
+        padding-left: 15px;
+        letter-spacing: 2px;
+    }
+
+    .info-title::before {
+        width: 12px;
+    }
+
+    .about-block {
+        padding: 40px 0;
+    }
+
+    .about-title {
+        font-size: 24px;
+        letter-spacing: 2px;
+    }
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal.show {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    max-width: 400px;
+    width: 90%;
+}
+
+.modal.show .modal-content {
+    transform: translateY(0);
+}
+
+.modal-content h2 {
+    color: #2ecc71;
+    margin: 20px 0 10px;
+    font-size: 24px;
+}
+
+.modal-content p {
+    color: #666;
+    margin: 0;
+    font-size: 16px;
+}
+
+/* Success Icon Animation */
+.success-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+}
+
+.checkmark {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 2;
+    stroke: #2ecc71;
+    stroke-miterlimit: 10;
+    box-shadow: inset 0 0 0 #2ecc71;
+    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+}
+
+.checkmark-circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 2;
+    stroke-miterlimit: 10;
+    stroke: #2ecc71;
+    fill: none;
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes stroke {
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes scale {
+    0%, 100% {
+        transform: none;
+    }
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+    }
+}
+
+@keyframes fill {
+    100% {
+        box-shadow: inset 0 0 0 80px #2ecc71;
+    }
+}
+
+.info-header.justify-center {
+    text-align: center;
+    position: relative;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.info-header.justify-center::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background-color: #3498db;
+}
+
+.info-header.justify-center .info-title {
+    margin: 0;
+    padding-bottom: 20px;
+}
+
+.info-header.justify-center .info-title::after {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.about-section .info-header {
+    text-align: center;
+    justify-content: center;
+}
+
+.about-section .info-title {
+    margin: 0;
+    padding-bottom: 20px;
+}
+
+.about-section .info-title::before {
+    display: none;
+}
+
+.about-section .info-title::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 60px;
+    height: 3px;
+    background: #3498db;
+    transform: translateX(-50%);
+}
 </style>
+
+<script>
+window.onscroll = function() {
+    var backToTop = document.getElementById("back-to-top");
+    if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+        backToTop.style.display = "flex";
+    } else {
+        backToTop.style.display = "none";
+    }
+};
+
+document.getElementById("back-to-top").onclick = function() {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+};
+
+// Remove text content from back to top button
+document.getElementById("back-to-top").textContent = '';
+
+// Function to show login success modal
+function showLoginSuccess() {
+    const modal = document.getElementById('loginSuccessModal');
+    modal.classList.add('show');
+    
+    // Automatically redirect after 2 seconds
+    setTimeout(() => {
+        modal.classList.remove('show');
+    }, 2000);
+}
+
+// Check if user just logged in using JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    var justLoggedIn = document.querySelector('meta[name="just-logged-in"]');
+    if (justLoggedIn && justLoggedIn.content === 'true') {
+        showLoginSuccess();
+        // Send request to clear the session variable
+        fetch('/clear_login_flag');
+    }
+});
+</script>
 {% endblock %} 

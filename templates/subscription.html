@@ -16,7 +16,8 @@
         <div class="form-group">
             <label>Tag Selection</label>
             <div class="tag-input-container">
-                <input type="text" id="tagInput" placeholder="Type a tag and press Enter" class="form-control">
+                <input type="text" id="tagInput" placeholder="Type a tag" class="form-control">
+                <button type="button" class="add-tag-button" onclick="addTagFromInput()">Add to List</button>
                 <div class="tag-suggestions" id="tagSuggestions"></div>
             </div>
             <div class="selected-tags" id="selectedTags"></div>
@@ -80,6 +81,33 @@
 
 .tag-input-container {
     position: relative;
+    display: flex;
+    gap: 0.5rem;
+}
+
+#tagInput {
+    flex: 1;
+}
+
+.add-tag-button {
+    padding: 0.75rem 1rem;
+    background-color: #000;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.add-tag-button:hover {
+    background-color: #333;
+    transform: translateY(-1px);
+}
+
+.add-tag-button:disabled {
+    background-color: #666;
+    cursor: not-allowed;
 }
 
 .tag-suggestions {
@@ -206,6 +234,15 @@
 <script>
 let selectedTags = [];
 
+function addTagFromInput() {
+    const tagInput = document.getElementById('tagInput');
+    const tagValue = tagInput.value.trim();
+    if (tagValue) {
+        addTag(tagValue);
+        tagInput.value = '';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const tagInput = document.getElementById('tagInput');
     const emailInput = document.getElementById('emailInput');
@@ -215,8 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     tagInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && this.value.trim()) {
-            addTag(this.value.trim());
-            this.value = '';
+            addTagFromInput();
             e.preventDefault();
         }
     });
