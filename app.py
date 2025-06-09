@@ -20,11 +20,15 @@ from botocore.awsrequest import AWSRequest
 from botocore.credentials import Credentials
 import json
 from urllib.parse import urlparse, quote
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__, static_folder='static')
-app.config['SECRET_KEY'] = 'your-secret-key'  # 在生产环境中应该使用环境变量
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 限制上传文件大小为16MB
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///users.db')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB file size limit
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -989,4 +993,5 @@ with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port) 
