@@ -1,0 +1,781 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- 矩阵背景 -->
+<canvas id="matrix-background" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;"></canvas>
+
+<div class="management-container">
+    <h2>Image Management</h2>
+    
+    <div class="controls">
+        <div class="selection-controls">
+            <button onclick="selectAll()" class="control-button">Select All</button>
+            <button onclick="deselectAll()" class="control-button">Deselect All</button>
+            <button onclick="deleteSelected()" class="delete-button" id="deleteButton" disabled>
+                Delete Selected (<span id="selectedCount">0</span>)
+            </button>
+        </div>
+        <div class="filter-controls">
+            <input type="text" id="searchInput" placeholder="Filter by tag..." oninput="filterImages()">
+        </div>
+    </div>
+
+    <div id="imageGrid" class="image-grid">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading images...</p>
+        </div>
+    </div>
+</div>
+
+<!-- 自定义通知弹窗 -->
+<div id="notification" class="notification">
+    <div class="notification-content">
+        <div class="notification-icon">
+            <div class="icon-success">✓</div>
+            <div class="icon-error">✗</div>
+        </div>
+        <div class="notification-message"></div>
+        <div class="notification-details"></div>
+        <button class="notification-close" onclick="hideNotification()">Close</button>
+    </div>
+</div>
+
+<style>
+.management-container {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: transparent;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.selection-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.control-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    background: #f8f9fa;
+    color: #495057;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.control-button:hover {
+    background: #e9ecef;
+}
+
+.delete-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    background: #ff4444;
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.delete-button:hover:not(:disabled) {
+    background: #ff0000;
+}
+
+.delete-button:disabled {
+    background: #ffa0a0;
+    cursor: not-allowed;
+}
+
+#searchInput {
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    min-width: 250px;
+}
+
+#searchInput:focus {
+    border-color: #000;
+    outline: none;
+}
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.image-card {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.image-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.image-card.selected {
+    border: 2px solid #007bff;
+}
+
+.image-checkbox {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    width: 20px;
+    height: 20px;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.image-container {
+    position: relative;
+    padding-top: 75%;
+    background: #f8f9fa;
+}
+
+.image-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-info {
+    padding: 1rem;
+}
+
+.image-info .tag {
+    display: inline-block;
+    background: #e9ecef;
+    color: #495057;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.image-id {
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+    word-break: break-all;
+}
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay.visible {
+    display: flex !important;
+}
+
+.modal-dialog {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(0);
+    transition: transform 0.3s ease;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.25rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-body p {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+.modal-body .warning {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.modal-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.modal-button.cancel {
+    background: #f8f9fa;
+    color: #495057;
+}
+
+.modal-button.cancel:hover {
+    background: #e9ecef;
+}
+
+.modal-button.confirm {
+    background: #dc3545;
+    color: white;
+}
+
+.modal-button.confirm:hover {
+    background: #c82333;
+}
+
+.progress-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.progress-container {
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    pointer-events: auto;
+}
+
+.progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #4CAF50;
+    width: 0;
+    transition: width 0.3s ease;
+}
+
+.result-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.result-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+}
+
+.result-content pre {
+    text-align: left;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+    white-space: pre-wrap;
+    font-family: monospace;
+}
+
+.result-content.success h3 {
+    color: #28a745;
+}
+
+.result-content.error h3 {
+    color: #dc3545;
+}
+
+/* 矩阵背景样式 */
+#matrix-background {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+#matrix-background.visible {
+    opacity: 1;
+}
+
+/* 通知弹窗样式 */
+.notification {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.notification.visible {
+    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.notification-content {
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.notification.visible .notification-content {
+    transform: translateY(0);
+}
+
+.notification-icon {
+    margin-bottom: 1.5rem;
+}
+
+.icon-success, .icon-error {
+    display: none;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto;
+    border-radius: 50%;
+    font-size: 32px;
+    line-height: 60px;
+    color: white;
+}
+
+.icon-success {
+    background: #28a745;
+}
+
+.icon-error {
+    background: #dc3545;
+}
+
+.notification.success .icon-success,
+.notification.error .icon-error {
+    display: block;
+}
+
+.notification-message {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: #fff;
+}
+
+.notification-details {
+    font-family: monospace;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 6px;
+    text-align: left;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    color: #fff;
+}
+
+.notification-close {
+    padding: 0.75rem 2rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.notification-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+</style>
+
+<script src="{{ url_for('static', filename='js/matrix.js') }}"></script>
+<script>
+let selectedImages = new Set();
+let allImages = [];
+
+// 页面加载时获取所有图片
+document.addEventListener('DOMContentLoaded', loadImages);
+
+// 显示通知
+function showNotification(message, details, isSuccess = true) {
+    const notification = document.getElementById('notification');
+    notification.className = `notification ${isSuccess ? 'success' : 'error'}`;
+    notification.querySelector('.notification-message').textContent = message;
+    notification.querySelector('.notification-details').textContent = details;
+    notification.classList.add('visible');
+}
+
+// 隐藏通知
+function hideNotification() {
+    const notification = document.getElementById('notification');
+    notification.classList.remove('visible');
+}
+
+async function loadImages() {
+    try {
+        const response = await fetch('/api/get-all-images');
+        
+        if (response.status === 401) {
+            window.location.href = '/login';
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error('Failed to load images');
+        }
+
+        const data = await response.json();
+        console.log('API Response:', data);
+
+        // 解析嵌套的响应结构
+        let results;
+        if (data.body) {
+            // 如果body是字符串，需要解析它
+            const bodyData = typeof data.body === 'string' ? JSON.parse(data.body) : data.body;
+            results = bodyData.results;
+        } else {
+            results = data.results;
+        }
+
+        if (!results) {
+            throw new Error('Invalid response format');
+        }
+
+        allImages = results;
+        console.log('Parsed images:', allImages);
+        
+        displayImages(allImages);
+    } catch (error) {
+        console.error('Error loading images:', error);
+        document.getElementById('imageGrid').innerHTML = `
+            <div class="error-message" style="text-align: center; padding: 2rem; color: #dc3545;">
+                <h3>Failed to Load Images</h3>
+                <p>${error.message}</p>
+                <button onclick="loadImages()" class="control-button" style="margin-top: 1rem;">
+                    Try Again
+                </button>
+            </div>
+        `;
+    }
+}
+
+function displayImages(images) {
+    console.log('Displaying images:', images.length);
+    const grid = document.getElementById('imageGrid');
+    grid.innerHTML = '';
+
+    if (images.length === 0) {
+        grid.innerHTML = `
+            <div class="no-results">
+                <h3>No Images Found</h3>
+                <p>No images match your criteria.</p>
+            </div>
+        `;
+        return;
+    }
+
+    images.forEach(image => {
+        const card = document.createElement('div');
+        card.className = `image-card ${selectedImages.has(image.image_id) ? 'selected' : ''}`;
+        card.setAttribute('data-image-id', image.image_id);
+        card.innerHTML = `
+            <input type="checkbox" 
+                   class="image-checkbox" 
+                   ${selectedImages.has(image.image_id) ? 'checked' : ''}
+                   onchange="toggleSelection('${image.image_id}', this)">
+            <div class="image-container">
+                <img src="${image.thumbnail_url}" alt="Image" 
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgTG9hZCBGYWlsZWQ8L3RleHQ+PC9zdmc>'">
+            </div>
+            <div class="image-info">
+                <span class="tag">${image.tag}</span>
+                <div class="image-id">ID: ${image.image_id}</div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+
+    updateDeleteButton();
+}
+
+function toggleSelection(imageId, checkbox) {
+    if (checkbox.checked) {
+        selectedImages.add(imageId);
+        checkbox.closest('.image-card').classList.add('selected');
+    } else {
+        selectedImages.delete(imageId);
+        checkbox.closest('.image-card').classList.remove('selected');
+    }
+    updateDeleteButton();
+}
+
+function selectAll() {
+    const visibleImages = getVisibleImages();
+    visibleImages.forEach(image => {
+        selectedImages.add(image.image_id);
+    });
+    updateDisplay();
+}
+
+function deselectAll() {
+    selectedImages.clear();
+    updateDisplay();
+}
+
+function updateDisplay() {
+    const checkboxes = document.querySelectorAll('.image-checkbox');
+    checkboxes.forEach(checkbox => {
+        const imageId = checkbox.closest('.image-card').querySelector('.image-id').textContent.split('ID: ')[1];
+        checkbox.checked = selectedImages.has(imageId);
+        checkbox.closest('.image-card').classList.toggle('selected', checkbox.checked);
+    });
+    updateDeleteButton();
+}
+
+function updateDeleteButton() {
+    const deleteButton = document.getElementById('deleteButton');
+    const selectedCount = document.getElementById('selectedCount');
+    const count = selectedImages.size;
+    
+    deleteButton.disabled = count === 0;
+    selectedCount.textContent = count;
+}
+
+function filterImages() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const filteredImages = allImages.filter(image => 
+        image.tag.toLowerCase().includes(searchTerm)
+    );
+    displayImages(filteredImages);
+}
+
+async function deleteSelected() {
+    console.log('deleteSelected called');
+    const totalImages = selectedImages.size;
+    if (totalImages === 0) {
+        console.log('No images selected');
+        return;
+    }
+
+    console.log(`Starting deletion of ${totalImages} images`);
+    let successCount = 0;
+    let failCount = 0;
+    const deleteErrors = [];
+
+    // 启动矩阵背景
+    const matrixCanvas = document.getElementById('matrix-background');
+    matrixCanvas.style.display = 'block';
+    setTimeout(() => matrixCanvas.classList.add('visible'), 10);
+    initMatrix(matrixCanvas);
+
+    // 显示进度条
+    const progressOverlay = document.createElement('div');
+    progressOverlay.className = 'progress-overlay';
+    progressOverlay.innerHTML = `
+        <div class="progress-container">
+            <h3>Deleting Images</h3>
+            <p><span id="deleteProgress">0</span>/${totalImages} completed</p>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(progressOverlay);
+
+    const updateProgress = (current) => {
+        const progressText = document.getElementById('deleteProgress');
+        const progressFill = progressOverlay.querySelector('.progress-fill');
+        if (progressText && progressFill) {
+            progressText.textContent = current;
+            progressFill.style.width = `${(current / totalImages) * 100}%`;
+        }
+    };
+
+    let count = 0;
+    const imagesToDelete = Array.from(selectedImages);
+
+    try {
+        for (const imageId of imagesToDelete) {
+            console.log(`Processing image ${count + 1}/${totalImages}: ${imageId}`);
+            try {
+                const response = await fetch('/api/delete-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ image_id: imageId })
+                });
+
+                console.log(`Delete response status for ${imageId}:`, response.status);
+                const responseText = await response.text();
+                console.log(`Delete response text for ${imageId}:`, responseText);
+
+                if (response.ok) {
+                    console.log(`Successfully deleted image ${imageId}`);
+                    successCount++;
+                    
+                    // 从allImages中移除已删除的图片
+                    allImages = allImages.filter(img => img.image_id !== imageId);
+                    
+                    // 找到对应的DOM元素并添加淡出动画
+                    const imageElement = document.querySelector(`.image-card[data-image-id="${imageId}"]`);
+                    if (imageElement) {
+                        imageElement.style.transition = 'all 0.5s ease';
+                        imageElement.style.opacity = '0';
+                        imageElement.style.transform = 'scale(0.8)';
+                        setTimeout(() => {
+                            imageElement.remove();
+                        }, 500);
+                    }
+                } else {
+                    console.error(`Failed to delete image ${imageId}:`, responseText);
+                    failCount++;
+                    deleteErrors.push(`Failed to delete image ${imageId}: ${response.status} ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error(`Error while deleting image ${imageId}:`, error);
+                failCount++;
+                deleteErrors.push(`Error deleting image ${imageId}: ${error.message}`);
+            }
+
+            count++;
+            updateProgress(count);
+            await new Promise(resolve => setTimeout(resolve, 100)); // 添加小延迟防止请求过快
+        }
+    } finally {
+        console.log('Deletion process completed');
+        console.log(`Success: ${successCount}, Failed: ${failCount}`);
+
+        // 停止矩阵背景
+        matrixCanvas.classList.remove('visible');
+        setTimeout(() => {
+            matrixCanvas.style.display = 'none';
+            stopMatrix();
+        }, 500);
+
+        // 移除进度条
+        setTimeout(() => {
+            progressOverlay.remove();
+        }, 500);
+
+        // 清除选择
+        selectedImages.clear();
+        updateDeleteButton();
+
+        // 如果所有图片都已删除，显示空状态
+        if (allImages.length === 0) {
+            const grid = document.getElementById('imageGrid');
+            grid.innerHTML = `
+                <div class="no-results">
+                    <h3>No Images</h3>
+                    <p>All images have been deleted.</p>
+                </div>
+            `;
+        }
+
+        // 显示结果通知
+        const message = 'Deletion Complete';
+        const details = `✓ ${successCount} images deleted successfully\n` +
+                       `✗ ${failCount} images failed to delete\n\n` +
+                       (deleteErrors.length > 0 ? `Errors:\n${deleteErrors.join('\n')}` : '');
+        showNotification(message, details, successCount > 0);
+    }
+}
+
+function getVisibleImages() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    return allImages.filter(image => 
+        image.tag.toLowerCase().includes(searchTerm)
+    );
+}
+</script>
+{% endblock %} 

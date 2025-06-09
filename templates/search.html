@@ -1,0 +1,1036 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="search-container">
+    <h2>Search Images</h2>
+    <div class="search-info">
+        Enter any tags to search for images, or use the time range search below.
+    </div>
+    
+    <!-- 标签搜索部分 -->
+    <div class="search-section">
+        <h3>Search by Tags</h3>
+        <div class="search-box">
+            <div class="tag-input-container">
+                <input type="text" id="tagInput" placeholder="Type a tag and press Enter">
+                <div class="tag-suggestions" id="tagSuggestions"></div>
+            </div>
+            <div class="selected-tags" id="selectedTags"></div>
+            <button type="button" onclick="searchImages()" class="search-button" id="searchButton">Search by Tags</button>
+        </div>
+    </div>
+
+    <!-- 时间搜索部分 -->
+    <div class="search-section">
+        <h3>Search by Time Range</h3>
+        <div class="search-box">
+            <div class="time-input-container">
+                <div class="time-input">
+                    <label for="startTime">Start Time:</label>
+                    <input type="datetime-local" id="startTime" name="startTime">
+                </div>
+                <div class="time-input">
+                    <label for="endTime">End Time:</label>
+                    <input type="datetime-local" id="endTime" name="endTime">
+                </div>
+            </div>
+            <button type="button" onclick="searchByTime()" class="search-button" id="timeSearchButton">Search by Time</button>
+        </div>
+    </div>
+
+    <div class="search-results" id="searchResults"></div>
+</div>
+
+<div id="deleteConfirmModal" class="delete-confirm-modal">
+    <div class="modal-content">
+        <h3>Confirm Deletion</h3>
+        <p>Are you sure you want to delete this image? This action cannot be undone.</p>
+        <div class="modal-buttons">
+            <button class="modal-button cancel-delete" onclick="hideDeleteModal()">Cancel</button>
+            <button class="modal-button confirm-delete" onclick="confirmDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.search-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.search-info {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.search-box {
+    margin-bottom: 2rem;
+}
+
+.tag-input-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+#tagInput {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+#tagInput:focus {
+    border-color: #000;
+    outline: none;
+}
+
+.tag-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+}
+
+.tag-suggestion {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+.tag-suggestion:hover {
+    background-color: #f5f5f5;
+}
+
+.selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    min-height: 2rem;
+}
+
+.tag {
+    background-color: #000;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.tag-remove {
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.tag-remove:hover {
+    opacity: 1;
+}
+
+.search-button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #000;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.search-button:hover:not(:disabled) {
+    background-color: #333;
+    transform: translateY(-1px);
+}
+
+.search-button:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+.search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.result-item {
+    position: relative;
+    width: 100%;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.result-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.result-item .image-container {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    margin-bottom: 1.5rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.result-item img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: #f8f9fa;
+}
+
+.result-item .info-container {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.result-item .info-section {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.result-item .info-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.result-item .info-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.result-item .info-value {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    word-break: break-all;
+    font-family: 'Monaco', 'Consolas', monospace;
+    background-color: #fff;
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #eee;
+}
+
+.result-item .detection-time {
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.result-item .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.result-item .tag {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.no-results {
+    text-align: center;
+    padding: 3rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    color: #666;
+}
+
+.no-results h3 {
+    color: #333;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.no-results p {
+    color: #666;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 0.5rem;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    grid-column: 1 / -1;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #000;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.search-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.search-section h3 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.time-input-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.time-input {
+    flex: 1;
+}
+
+.time-input label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #666;
+}
+
+.time-input input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.time-input input:focus {
+    border-color: #000;
+    outline: none;
+}
+
+.url-toggle {
+    background-color: #f8f9fa;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #495057;
+    transition: all 0.3s ease;
+}
+
+.url-toggle:hover {
+    background-color: #e9ecef;
+}
+
+.url-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.url-toggle.expanded i {
+    transform: rotate(180deg);
+}
+
+.url-content {
+    display: none;
+    margin-top: 0.5rem;
+}
+
+.url-content.visible {
+    display: block;
+}
+
+.result-item .count-badge {
+    display: inline-block;
+    background-color: #000;
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+}
+
+.result-item .image-id {
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.info-notice {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.info-notice .notice-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-notice p {
+    margin: 0;
+}
+
+.delete-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
+.delete-button:hover {
+    background: #ff4444;
+    transform: scale(1.1);
+}
+
+.delete-button:hover svg {
+    fill: white;
+}
+
+.delete-button svg {
+    width: 18px;
+    height: 18px;
+    fill: #666;
+    transition: all 0.3s ease;
+}
+
+.delete-confirm-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-confirm-modal.visible {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.modal-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.confirm-delete {
+    background: #ff4444;
+    color: white;
+}
+
+.confirm-delete:hover {
+    background: #ff0000;
+}
+
+.cancel-delete {
+    background: #f8f9fa;
+    color: #495057;
+}
+
+.cancel-delete:hover {
+    background: #e9ecef;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+</style>
+
+<script>
+let selectedTags = [];
+let currentImageToDelete = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const tagInput = document.getElementById('tagInput');
+    const searchButton = document.getElementById('searchButton');
+    
+    updateSearchButton();
+    loadAvailableTags();
+    
+    tagInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && this.value.trim()) {
+            addTag(this.value.trim());
+            this.value = '';
+            e.preventDefault();
+        }
+    });
+
+    tagInput.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const pastedText = e.clipboardData.getData('text');
+        const tags = pastedText.split(/[,\s]+/).filter(tag => tag.trim());
+        tags.forEach(tag => addTag(tag.trim()));
+    });
+});
+
+function loadAvailableTags() {
+    const tagSuggestions = document.getElementById('tagSuggestions');
+    
+    fetch('/api/list-topics', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (response.status === 401) {
+            window.location.href = '/login';
+            throw new Error('Authentication expired, please login again');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data && Array.isArray(data)) {
+            tagSuggestions.innerHTML = '';
+            data.forEach(tag => {
+                const suggestion = document.createElement('div');
+                suggestion.className = 'tag-suggestion';
+                suggestion.textContent = tag;
+                suggestion.onclick = () => {
+                    addTag(tag);
+                    document.getElementById('tagInput').value = '';
+                    tagSuggestions.style.display = 'none';
+                };
+                tagSuggestions.appendChild(suggestion);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Failed to load tags:', error);
+        if (error.message === 'Authentication expired, please login again') {
+            return;
+        }
+        tagSuggestions.innerHTML = `
+            <div class="tag-suggestion error">
+                Failed to load tags: ${error.message}
+            </div>
+        `;
+    });
+
+    document.getElementById('tagInput').addEventListener('input', function() {
+        const value = this.value.trim().toLowerCase();
+        const suggestions = tagSuggestions.getElementsByClassName('tag-suggestion');
+        let hasVisibleSuggestions = false;
+
+        Array.from(suggestions).forEach(suggestion => {
+            if (!suggestion.classList.contains('error')) {
+                const matches = suggestion.textContent.toLowerCase().includes(value);
+                suggestion.style.display = matches ? 'block' : 'none';
+                if (matches) hasVisibleSuggestions = true;
+            }
+        });
+
+        tagSuggestions.style.display = hasVisibleSuggestions && value ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.tag-input-container')) {
+            tagSuggestions.style.display = 'none';
+        }
+    });
+}
+
+function addTag(tag) {
+    if (!tag || selectedTags.includes(tag)) return;
+    
+    selectedTags.push(tag);
+    const selectedTagsContainer = document.getElementById('selectedTags');
+    const tagElement = document.createElement('div');
+    tagElement.className = 'tag';
+    tagElement.innerHTML = `
+        ${tag}
+        <span class="tag-remove" onclick="removeTag('${tag}')">×</span>
+    `;
+    selectedTagsContainer.appendChild(tagElement);
+    updateSearchButton();
+    
+    console.log('Added tag:', tag);
+    console.log('Current tags:', selectedTags);
+}
+
+function removeTag(tag) {
+    const index = selectedTags.indexOf(tag);
+    if (index > -1) {
+        selectedTags.splice(index, 1);
+        const selectedTagsContainer = document.getElementById('selectedTags');
+        const tagElement = Array.from(selectedTagsContainer.children)
+            .find(el => el.textContent.trim().replace('×', '') === tag);
+        if (tagElement) {
+            selectedTagsContainer.removeChild(tagElement);
+        }
+        updateSearchButton();
+        
+        console.log('Removed tag:', tag);
+        console.log('Current tags:', selectedTags);
+    }
+}
+
+function updateSearchButton() {
+    const searchButton = document.getElementById('searchButton');
+    const hasSelectedTags = selectedTags.length > 0;
+    searchButton.disabled = !hasSelectedTags;
+    
+    console.log('Search button state updated:', {
+        hasSelectedTags: hasSelectedTags,
+        isDisabled: searchButton.disabled
+    });
+}
+
+function toggleUrls(element) {
+    const urlContent = element.nextElementSibling;
+    const isExpanded = element.classList.contains('expanded');
+    
+    element.classList.toggle('expanded');
+    urlContent.classList.toggle('visible');
+    
+    // 更新按钮文本
+    element.querySelector('.toggle-text').textContent = 
+        isExpanded ? 'Show URLs' : 'Hide URLs';
+}
+
+function showDeleteModal(imageId, resultItem) {
+    currentImageToDelete = {
+        id: imageId,
+        element: resultItem
+    };
+    const modal = document.getElementById('deleteConfirmModal');
+    if (modal) {
+        modal.classList.add('visible');
+    }
+}
+
+function hideDeleteModal() {
+    const modal = document.getElementById('deleteConfirmModal');
+    if (modal) {
+        modal.classList.remove('visible');
+    }
+    // 重置当前要删除的图片信息
+    currentImageToDelete = null;
+}
+
+async function deleteImage(imageId, resultItem) {
+    if (!imageId || !resultItem) {
+        console.error('Invalid image information for deletion');
+        return;
+    }
+
+    // 添加加载动画
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'loading-overlay';
+    loadingOverlay.innerHTML = '<div class="loading-spinner"></div>';
+    resultItem.appendChild(loadingOverlay);
+
+    try {
+        console.log('Deleting image:', imageId);
+        const response = await fetch('/api/delete-image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ image_id: imageId })
+        });
+
+        console.log('Delete response status:', response.status);
+
+        if (response.status === 401) {
+            window.location.href = '/login';
+            throw new Error('Authentication expired, please login again');
+        }
+
+        const data = await response.json();
+        console.log('Delete response data:', data);
+
+        if (response.ok) {
+            // 成功删除后，添加淡出动画并移除元素
+            resultItem.style.transition = 'all 0.5s ease';
+            resultItem.style.opacity = '0';
+            resultItem.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                resultItem.remove();
+                // 检查是否还有其他结果
+                const remainingResults = document.querySelectorAll('.result-item');
+                if (remainingResults.length === 0) {
+                    const searchResults = document.getElementById('searchResults');
+                    searchResults.innerHTML = `
+                        <div class="no-results">
+                            <h3>No Results</h3>
+                            <p>All images have been deleted. Try a new search.</p>
+                        </div>
+                    `;
+                }
+            }, 500);
+        } else {
+            throw new Error(data.error || 'Failed to delete image');
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+        alert(`Failed to delete image: ${error.message}`);
+    } finally {
+        if (loadingOverlay && loadingOverlay.parentNode) {
+            loadingOverlay.remove();
+        }
+    }
+}
+
+function confirmDelete() {
+    if (currentImageToDelete && currentImageToDelete.id && currentImageToDelete.element) {
+        const { id, element } = currentImageToDelete;
+        hideDeleteModal();
+        deleteImage(id, element);
+    } else {
+        console.error('No valid image selected for deletion');
+        hideDeleteModal();
+    }
+}
+
+function displayResults(data) {
+    const searchResults = document.getElementById('searchResults');
+    searchResults.innerHTML = '';
+
+    if (data.results) {
+        const validResults = data.results.filter(item => {
+            return item 
+                && item.image_id 
+                && item.tag 
+                && item.detection_time 
+                && item.thumbnail_url 
+                && item.original_url
+                && typeof item.count === 'number';
+        });
+
+        if (validResults.length > 0) {
+            validResults.forEach((item, index) => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                resultItem.setAttribute('data-image-id', item.image_id);
+                
+                const detectionTime = new Date(item.detection_time * 1000).toLocaleString();
+                
+                resultItem.innerHTML = `
+                    <button class="delete-button" onclick="event.stopPropagation(); showDeleteModal('${item.image_id}', this.closest('.result-item'))" title="Delete Image">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                        </svg>
+                    </button>
+                    <div class="image-container">
+                        <img src="${item.thumbnail_url}" alt="Search Result ${index + 1}" 
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveG0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgTG9hZCBGYWlsZWQ8L3RleHQ+PC9zdmc+'">
+                    </div>
+                    <div class="info-container">
+                        <div class="info-section">
+                            <div class="detection-time">
+                                Detection Time: ${detectionTime}
+                                <span class="count-badge">Count: ${item.count}</span>
+                            </div>
+                            <div class="image-id">ID: ${item.image_id}</div>
+                        </div>
+                        <div class="info-section">
+                            <div class="info-label">Tags</div>
+                            <div class="tags">
+                                <span class="tag">${item.tag}</span>
+                            </div>
+                        </div>
+                        <div class="info-section">
+                            <button class="url-toggle" onclick="toggleUrls(this)">
+                                <span class="toggle-text">Show URLs</span>
+                                <i>▼</i>
+                            </button>
+                            <div class="url-content">
+                                <div class="info-label">Thumbnail URL</div>
+                                <div class="info-value">${item.thumbnail_url}</div>
+                                <div class="info-label" style="margin-top: 0.5rem;">Original URL</div>
+                                <div class="info-value">${item.original_url}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                searchResults.appendChild(resultItem);
+            });
+
+            if (validResults.length < data.results.length) {
+                const notice = document.createElement('div');
+                notice.className = 'info-notice';
+                notice.innerHTML = `
+                    <div class="notice-content">
+                        <p>Some results (${data.results.length - validResults.length}) were hidden due to incomplete information.</p>
+                    </div>
+                `;
+                searchResults.insertBefore(notice, searchResults.firstChild);
+            }
+        } else {
+            searchResults.innerHTML = `
+                <div class="no-results">
+                    <h3>No Valid Results Found</h3>
+                    <p>No results with complete information were found.</p>
+                    ${data.results.length > 0 ? 
+                        `<p>Note: ${data.results.length} result(s) were hidden due to incomplete information.</p>` : 
+                        ''}
+                </div>
+            `;
+        }
+    } else {
+        searchResults.innerHTML = `
+            <div class="no-results">
+                <h3>Invalid Response Format</h3>
+                <p>The server returned an unexpected response format</p>
+            </div>
+        `;
+    }
+}
+
+async function searchByTime() {
+    const searchResults = document.getElementById('searchResults');
+    const startTimeInput = document.getElementById('startTime');
+    const endTimeInput = document.getElementById('endTime');
+    
+    try {
+        if (!startTimeInput.value || !endTimeInput.value) {
+            throw new Error('Please select both start and end time');
+        }
+
+        const startTime = Math.floor(new Date(startTimeInput.value).getTime() / 1000);
+        const endTime = Math.floor(new Date(endTimeInput.value).getTime() / 1000);
+
+        if (startTime >= endTime) {
+            throw new Error('Start time must be before end time');
+        }
+
+        searchResults.innerHTML = `
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Searching for images...</p>
+            </div>
+        `;
+
+        console.log('Starting time-based search:', { startTime, endTime });
+
+        const response = await fetch('/api/search-by-time', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                start_time: startTime,
+                end_time: endTime
+            })
+        });
+
+        console.log('Search response status:', response.status);
+        
+        if (response.status === 401) {
+            window.location.href = '/login';
+            throw new Error('Authentication expired, please login again');
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || errorData.message || `Search failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Search response data:', data);
+
+        displayResults(data);
+    } catch (error) {
+        console.error('Search error:', error);
+        searchResults.innerHTML = `
+            <div class="no-results">
+                <h3>Search Error</h3>
+                <p>${error.message}</p>
+                <p>Please try again with different parameters</p>
+            </div>
+        `;
+    }
+}
+
+// 修改searchImages函数，适配新的API响应格式
+async function searchImages() {
+    const searchButton = document.getElementById('searchButton');
+    const searchResults = document.getElementById('searchResults');
+    
+    try {
+        searchButton.disabled = true;
+        searchResults.innerHTML = `
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Searching for images...</p>
+            </div>
+        `;
+
+        console.log('Starting search with tags:', selectedTags);
+
+        const requestData = {
+            tags: selectedTags.map(tag => tag.trim()).filter(tag => tag)
+        };
+
+        console.log('Request data:', requestData);
+
+        const response = await fetch('/api/search-by-tags', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        console.log('Search response status:', response.status);
+        
+        if (response.status === 401) {
+            window.location.href = '/login';
+            throw new Error('Authentication expired, please login again');
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || errorData.message || `Search failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Search response data:', data);
+
+        displayResults(data);
+    } catch (error) {
+        console.error('Search error:', error);
+        if (error.message === 'Authentication expired, please login again') {
+            searchResults.innerHTML = `
+                <div class="no-results">
+                    <h3>Authentication Expired</h3>
+                    <p>Redirecting to login page...</p>
+                </div>
+            `;
+        } else {
+            searchResults.innerHTML = `
+                <div class="no-results">
+                    <h3>Search Error</h3>
+                    <p>${error.message}</p>
+                    <p>Please try again or try different tags</p>
+                </div>
+            `;
+        }
+    } finally {
+        updateSearchButton();
+    }
+}
+</script>
+{% endblock %} 

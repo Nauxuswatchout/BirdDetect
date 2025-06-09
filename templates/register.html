@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-container">
+    <div id="registerForm">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Sign Up</h2>
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required 
+                       pattern="^[a-zA-Z0-9]{8}$"
+                       oninput="validateUsername(this)">
+                <small class="help-text">Must be exactly 8 characters (letters and numbers only)</small>
+                <div class="validation-message" id="usernameValidation"></div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required
+                       oninput="validateEmail(this)">
+                <div class="validation-message" id="emailValidation"></div>
+            </div>
+            <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="firstName" required
+                       oninput="validateName(this, 'firstNameValidation')">
+                <div class="validation-message" id="firstNameValidation"></div>
+            </div>
+            <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" name="lastName" required
+                       oninput="validateName(this, 'lastNameValidation')">
+                <div class="validation-message" id="lastNameValidation"></div>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required
+                       oninput="validatePassword(this)">
+                <div class="password-requirements">
+                    <div class="requirement" id="lengthReq">
+                        <span class="check">✓</span> At least 8 characters
+                    </div>
+                    <div class="requirement" id="uppercaseReq">
+                        <span class="check">✓</span> At least one uppercase letter
+                    </div>
+                    <div class="requirement" id="lowercaseReq">
+                        <span class="check">✓</span> At least one lowercase letter
+                    </div>
+                    <div class="requirement" id="numberReq">
+                        <span class="check">✓</span> At least one number
+                    </div>
+                    <div class="requirement" id="specialReq">
+                        <span class="check">✓</span> At least one special character (!@#$%^&*)
+                    </div>
+                </div>
+                <div class="validation-message" id="passwordValidation"></div>
+            </div>
+            <div class="loading">
+                <div class="loading-spinner"></div>
+            </div>
+            <button type="submit" class="submit-button" id="registerButton" disabled>Sign Up</button>
+        </form>
+        <p style="text-align: center; margin-top: 1rem;">
+            Already have an account? <a href="{{ url_for('login') }}" style="color: #000;">Login here</a>
+        </p>
+    </div>
+
+    <div id="confirmationForm" style="display: none;">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Verify Email</h2>
+        <p style="text-align: center; margin-bottom: 1rem;">
+            A verification code has been sent to your email. Please enter it below.
+        </p>
+        <div class="form-group">
+            <label for="confirmationCode">Verification Code</label>
+            <input type="text" id="confirmationCode" name="confirmationCode" required>
+        </div>
+        <div class="loading">
+            <div class="loading-spinner"></div>
+        </div>
+        <button onclick="handleConfirmation()" class="submit-button">Verify</button>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/register.js') }}"></script>
+{% endblock %} 

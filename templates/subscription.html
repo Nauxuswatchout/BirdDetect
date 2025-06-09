@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="subscription-container">
+    <h2>Tag Subscription Service</h2>
+    <div class="subscription-info">
+        After subscribing to tags, you will receive email notifications when new related images are uploaded.
+    </div>
+
+    <div class="subscription-form">
+        <div class="form-group">
+            <label for="emailInput">Email Address</label>
+            <input type="email" id="emailInput" placeholder="Enter your email address" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label>Tag Selection</label>
+            <div class="tag-input-container">
+                <input type="text" id="tagInput" placeholder="Type a tag and press Enter" class="form-control">
+                <div class="tag-suggestions" id="tagSuggestions"></div>
+            </div>
+            <div class="selected-tags" id="selectedTags"></div>
+        </div>
+
+        <div class="existing-topics">
+            <h3>Available Tags</h3>
+            <div id="topicsList" class="topics-list">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+
+        <button type="button" onclick="submitSubscription()" class="subscribe-button" id="subscribeButton" disabled>
+            Subscribe
+        </button>
+    </div>
+</div>
+
+<style>
+.subscription-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.subscription-info {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    color: #666;
+}
+
+.subscription-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-control {
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #000;
+    outline: none;
+}
+
+.tag-input-container {
+    position: relative;
+}
+
+.tag-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+}
+
+.selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    min-height: 2rem;
+}
+
+.tag {
+    background-color: #000;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.tag-remove {
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.tag-remove:hover {
+    opacity: 1;
+}
+
+.existing-topics {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.topics-list {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.topic-tag {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.topic-tag:hover {
+    background-color: #000;
+    color: #fff;
+}
+
+.subscribe-button {
+    width: 100%;
+    padding: 1rem;
+    background-color: #000;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.subscribe-button:hover:not(:disabled) {
+    background-color: #333;
+    transform: translateY(-1px);
+}
+
+.subscribe-button:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #000;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 1rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error-message {
+    color: #dc3545;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.success-message {
+    color: #28a745;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+</style>
+
+<script>
+let selectedTags = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    const tagInput = document.getElementById('tagInput');
+    const emailInput = document.getElementById('emailInput');
+    
+    loadExistingTopics();
+    updateSubscribeButton();
+    
+    tagInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && this.value.trim()) {
+            addTag(this.value.trim());
+            this.value = '';
+            e.preventDefault();
+        }
+    });
+
+    emailInput.addEventListener('input', updateSubscribeButton);
+});
+
+function loadExistingTopics() {
+    const topicsList = document.getElementById('topicsList');
+    
+    fetch('/api/list-topics', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (response.status === 401) {
+            window.location.href = '/login';
+            throw new Error('Authentication expired, please login again');
+        }
+        return response.json();
+    })
+    .then(data => {
+        topicsList.innerHTML = '';
+        if (data && Array.isArray(data)) {
+            data.forEach(topic => {
+                const topicTag = document.createElement('div');
+                topicTag.className = 'topic-tag';
+                topicTag.textContent = topic;
+                topicTag.onclick = () => addTag(topic);
+                topicsList.appendChild(topicTag);
+            });
+        } else if (data.error) {
+            throw new Error(data.error);
+        } else {
+            topicsList.innerHTML = '<p>No tags available</p>';
+        }
+    })
+    .catch(error => {
+        console.error('Failed to load tags:', error);
+        if (error.message === 'Authentication expired, please login again') {
+            topicsList.innerHTML = '<p class="error-message">Authentication expired, redirecting to login page...</p>';
+        } else {
+            topicsList.innerHTML = `<p class="error-message">Failed to load tags: ${error.message}</p>`;
+        }
+    });
+}
+
+function addTag(tag) {
+    if (!tag || selectedTags.includes(tag)) return;
+    
+    selectedTags.push(tag);
+    const selectedTagsContainer = document.getElementById('selectedTags');
+    const tagElement = document.createElement('div');
+    tagElement.className = 'tag';
+    tagElement.innerHTML = `
+        ${tag}
+        <span class="tag-remove" onclick="removeTag('${tag}')">×</span>
+    `;
+    selectedTagsContainer.appendChild(tagElement);
+    updateSubscribeButton();
+}
+
+function removeTag(tag) {
+    const index = selectedTags.indexOf(tag);
+    if (index > -1) {
+        selectedTags.splice(index, 1);
+        const selectedTagsContainer = document.getElementById('selectedTags');
+        const tagElement = Array.from(selectedTagsContainer.children)
+            .find(el => el.textContent.trim().replace('×', '') === tag);
+        if (tagElement) {
+            selectedTagsContainer.removeChild(tagElement);
+        }
+        updateSubscribeButton();
+    }
+}
+
+function updateSubscribeButton() {
+    const subscribeButton = document.getElementById('subscribeButton');
+    const emailInput = document.getElementById('emailInput');
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value);
+    
+    subscribeButton.disabled = !isValidEmail || selectedTags.length === 0;
+}
+
+async function submitSubscription() {
+    const emailInput = document.getElementById('emailInput');
+    const subscribeButton = document.getElementById('subscribeButton');
+    
+    try {
+        subscribeButton.disabled = true;
+        subscribeButton.textContent = 'Subscribing...';
+        
+        const response = await fetch('/api/subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: emailInput.value,
+                tags: selectedTags
+            })
+        });
+
+        if (response.status === 401) {
+            window.location.href = '/login';
+            throw new Error('Authentication expired, please login again');
+        }
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Subscription successful! Please check your email for confirmation.');
+            emailInput.value = '';
+            selectedTags = [];
+            document.getElementById('selectedTags').innerHTML = '';
+        } else {
+            throw new Error(data.error || 'Subscription failed');
+        }
+    } catch (error) {
+        if (error.message === 'Authentication expired, please login again') {
+            alert('Authentication expired, redirecting to login page...');
+        } else {
+            alert(`Subscription failed: ${error.message}`);
+        }
+    } finally {
+        subscribeButton.disabled = false;
+        subscribeButton.textContent = 'Subscribe';
+        updateSubscribeButton();
+    }
+}
+</script>
+{% endblock %} 

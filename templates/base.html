@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bird Detection</title>
+    <style>
+        /* 重置样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        /* 导航栏样式 */
+        .navbar {
+            background-color: #000;
+            padding: 0.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .navbar-logo {
+            height: 40px;
+            width: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-logo:hover {
+            transform: scale(1.05);
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info {
+            color: #fff;
+            font-size: 0.9rem;
+            margin-right: 1rem;
+        }
+
+        .nav-button {
+            background-color: transparent;
+            border: 1px solid #fff;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-width: 100px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.5;
+            display: inline-block;
+        }
+
+        .nav-button:hover {
+            background-color: #fff;
+            color: #000;
+        }
+
+        /* 主要内容区域 */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* 卡片网格 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            margin-bottom: 1rem;
+            color: #000;
+        }
+
+        /* 模态框样式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 400px;
+            margin: auto;
+            position: relative;
+            transform: scale(0.7);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .modal.active {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        /* 表单样式 */
+        .form-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .help-text {
+            display: block;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .validation-message {
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .validation-message.error {
+            display: block;
+            color: #dc3545;
+        }
+
+        .validation-message.success {
+            display: block;
+            color: #28a745;
+        }
+
+        .password-requirements {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+
+        .requirement {
+            margin: 0.25rem 0;
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .requirement .check {
+            color: #dc3545;
+            margin-right: 0.5rem;
+        }
+
+        .requirement.met .check {
+            color: #28a745;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+
+        .submit-button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+
+        .submit-button:not(:disabled):hover {
+            background-color: #333;
+        }
+
+        /* 闪现消息样式 */
+        .flash-messages {
+            list-style: none;
+            margin: 1rem 0;
+        }
+
+        .flash-message {
+            padding: 1rem;
+            background-color: #f8d7da;
+            color: #721c24;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <a href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-right">
+            {% if current_user.is_authenticated %}
+                <span class="user-info">Welcome, {{ current_user.username }}</span>
+                <a href="{{ url_for('logout') }}" class="nav-button">Logout</a>
+            {% else %}
+                <button onclick="showLoginModal()" class="nav-button">Login</button>
+                <a href="{{ url_for('register') }}" class="nav-button">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- 登录模态框 -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal">
+            <button class="modal-close" onclick="hideLoginModal()">&times;</button>
+            <h2 style="text-align: center; margin-bottom: 2rem;">Login</h2>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="loading">
+                <div class="loading-spinner"></div>
+            </div>
+            <button onclick="handleLogin()" class="submit-button">登录</button>
+        </div>
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flash-messages">
+                    {% for message in messages %}
+                        <li class="flash-message">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        function showLoginModal() {
+            const modal = document.getElementById('loginModal');
+            const modalContent = modal.querySelector('.modal');
+            modal.classList.add('active');
+            setTimeout(() => {
+                modalContent.classList.add('active');
+            }, 10);
+        }
+
+        function hideLoginModal() {
+            const modal = document.getElementById('loginModal');
+            const modalContent = modal.querySelector('.modal');
+            modalContent.classList.remove('active');
+            setTimeout(() => {
+                modal.classList.remove('active');
+            }, 500);
+        }
+
+        async function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loading = document.querySelector('.loading');
+            const submitButton = document.querySelector('.submit-button');
+
+            if (!username || !password) {
+                alert('please fill in the username and password');
+                return;
+            }
+
+            loading.classList.add('active');
+            submitButton.disabled = true;
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    // 存储令牌
+                    localStorage.setItem('access_token', data.tokens.access_token);
+                    localStorage.setItem('id_token', data.tokens.id_token);
+                    localStorage.setItem('refresh_token', data.tokens.refresh_token);
+                    
+                    // 刷新页面
+                    window.location.reload();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Login failed, please try again later');
+            } finally {
+                loading.classList.remove('active');
+                submitButton.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html> 

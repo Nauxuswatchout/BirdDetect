@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- 矩阵背景 -->
+<canvas id="matrix-background" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;"></canvas>
+
+<div class="upload-container">
+    <h2>Upload Images</h2>
+    <div class="upload-box" id="uploadBox">
+        <div class="upload-content" id="uploadContent">
+            <img src="{{ url_for('static', filename='images/upload-icon.png') }}" alt="Upload" class="upload-icon">
+            <p>Drag and drop images here or click to select</p>
+            <input type="file" id="fileInput" accept="image/jpeg,image/png" multiple style="display: none;">
+        </div>
+        <div class="upload-preview" id="uploadPreview"></div>
+    </div>
+    <div class="upload-status" id="uploadStatus"></div>
+</div>
+
+<!-- 上传通知 -->
+<div id="notification" class="notification">
+    <div class="notification-content">
+        <div class="notification-icon">
+            <div class="icon-success">✓</div>
+            <div class="icon-error">✗</div>
+        </div>
+        <div class="notification-message"></div>
+        <div class="notification-details"></div>
+        <button class="notification-close" onclick="hideNotification()">Close</button>
+    </div>
+</div>
+
+<style>
+.upload-container {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: transparent;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.upload-box {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    min-height: 300px;
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.upload-box.matrix-active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.upload-box.drag-over {
+    border-color: #000;
+    background-color: rgba(0,0,0,0.05);
+}
+
+.upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.upload-icon {
+    width: 64px;
+    height: 64px;
+    opacity: 0.5;
+}
+
+.upload-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.preview-item {
+    position: relative;
+    padding-top: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.preview-item img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-item .remove-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.upload-status {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+}
+
+.status-item.matrix-active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.status-item .progress {
+    flex-grow: 1;
+    height: 4px;
+    background-color: #ddd;
+    border-radius: 2px;
+}
+
+.status-item .progress-bar {
+    height: 100%;
+    background-color: #000;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* 矩阵背景样式 */
+#matrix-background {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+#matrix-background.visible {
+    opacity: 1;
+}
+
+/* 通知样式 */
+.notification {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.notification.visible {
+    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.notification-content {
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+    pointer-events: auto;
+}
+
+.notification.visible .notification-content {
+    transform: translateY(0);
+}
+
+.notification-icon {
+    margin-bottom: 1.5rem;
+}
+
+.icon-success, .icon-error {
+    display: none;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto;
+    border-radius: 50%;
+    font-size: 32px;
+    line-height: 60px;
+    color: white;
+}
+
+.icon-success {
+    background: #28a745;
+}
+
+.icon-error {
+    background: #dc3545;
+}
+
+.notification.success .icon-success,
+.notification.error .icon-error {
+    display: block;
+}
+
+.notification-message {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: #fff;
+}
+
+.notification-details {
+    font-family: monospace;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 6px;
+    text-align: left;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    color: #fff;
+}
+
+.notification-close {
+    padding: 0.75rem 2rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+}
+
+.notification-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.upload-container h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #000;
+}
+</style>
+
+<script src="{{ url_for('static', filename='js/matrix.js') }}"></script>
+<script>
+// 全局函数
+function showNotification(message, details, isSuccess = true) {
+    const notification = document.getElementById('notification');
+    notification.className = `notification ${isSuccess ? 'success' : 'error'}`;
+    notification.querySelector('.notification-message').textContent = message;
+    notification.querySelector('.notification-details').textContent = details;
+    notification.classList.add('visible');
+}
+
+function hideNotification() {
+    const notification = document.getElementById('notification');
+    notification.classList.remove('visible');
+    
+    // 恢复页面原始状态
+    const matrixCanvas = document.getElementById('matrix-background');
+    const uploadBox = document.getElementById('uploadBox');
+    const statusItems = document.querySelectorAll('.status-item');
+    
+    matrixCanvas.classList.remove('visible');
+    uploadBox.classList.remove('matrix-active');
+    statusItems.forEach(item => item.classList.remove('matrix-active'));
+    
+    setTimeout(() => {
+        matrixCanvas.style.display = 'none';
+        stopMatrix();
+    }, 500);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadBox = document.getElementById('uploadBox');
+    const fileInput = document.getElementById('fileInput');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const uploadStatus = document.getElementById('uploadStatus');
+    let uploadInProgress = false;
+
+    // Handle drag and drop events
+    uploadBox.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadBox.classList.add('drag-over');
+    });
+
+    uploadBox.addEventListener('dragleave', () => {
+        uploadBox.classList.remove('drag-over');
+    });
+
+    uploadBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadBox.classList.remove('drag-over');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    // Handle click to upload
+    uploadBox.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', () => {
+        handleFiles(fileInput.files);
+    });
+
+    function handleFiles(files) {
+        Array.from(files).forEach(file => {
+            if (file.type === 'image/jpeg' || file.type === 'image/png') {
+                uploadFile(file);
+            } else {
+                alert('Please select only JPEG or PNG images.');
+            }
+        });
+    }
+
+    // 处理文件上传
+    async function uploadFile(file) {
+        if (!uploadInProgress) {
+            uploadInProgress = true;
+            // 启动矩阵背景
+            const matrixCanvas = document.getElementById('matrix-background');
+            const uploadBox = document.getElementById('uploadBox');
+            
+            matrixCanvas.style.display = 'block';
+            uploadBox.classList.add('matrix-active');
+            
+            setTimeout(() => {
+                matrixCanvas.classList.add('visible');
+            }, 10);
+            initMatrix(matrixCanvas);
+        }
+
+        // 创建状态元素
+        const statusItem = document.createElement('div');
+        statusItem.className = 'status-item matrix-active';
+        statusItem.innerHTML = `
+            <span>${file.name}</span>
+            <div class="progress">
+                <div class="progress-bar" style="width: 0%"></div>
+            </div>
+        `;
+        uploadStatus.appendChild(statusItem);
+
+        try {
+            console.log('Starting upload process for:', file.name);
+            const progressBar = statusItem.querySelector('.progress-bar');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/api/upload-to-s3', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                progressBar.style.width = '100%';
+                
+                // 添加预览
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    previewItem.innerHTML = `
+                        <img src="${e.target.result}" alt="${file.name}">
+                        <button class="remove-button" onclick="this.parentElement.remove()">×</button>
+                    `;
+                    uploadPreview.appendChild(previewItem);
+                };
+                reader.readAsDataURL(file);
+
+                // 显示成功消息
+                showNotification(
+                    'Upload Successful',
+                    `File: ${file.name}\nS3 Key: ${result.s3_key}`,
+                    true
+                );
+            } else {
+                throw new Error(result.error || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            showNotification(
+                'Upload Failed',
+                `File: ${file.name}\nError: ${error.message}`,
+                false
+            );
+        }
+
+        // 检查是否所有上传都完成
+        const inProgressUploads = uploadStatus.querySelectorAll('.progress-bar[style="width: 100%"]');
+        if (inProgressUploads.length === uploadStatus.children.length) {
+            uploadInProgress = false;
+        }
+    }
+});
+</script>
+{% endblock %} 
